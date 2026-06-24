@@ -327,12 +327,13 @@ st.markdown('<div class="section-label">⚡ Quick Actions</div>', unsafe_allow_h
 
 # NOTE: update these page paths to match your actual filenames under pages/
 PAGE_PATHS = {
-    "portfolio": "pages/1_Portfolio.py",
-    "projects": "pages/2_Projects.py",
-    "certificates": "pages/3_Certificates.py",
-    "achievements": "pages/4_Achievements.py",
-    "resume": "pages/5_Resume_Generator.py",
+    "portfolio": "Pages/3_Portfolio.py",
+    "projects": "Pages/2_projects.py",
+    "certificates": "Pages/1_certificates.py",
+    "achievements": "Pages/4_Achievements.py",
+    "resume": "Pages/5_Resume_Generator.py",
 }
+
 
 action_cols = st.columns(4)
 actions = [
