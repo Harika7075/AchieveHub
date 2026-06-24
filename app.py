@@ -353,10 +353,7 @@ for col, (icon, title, sub, page_key) in zip(action_cols, actions):
         </div>
         """, unsafe_allow_html=True)
         if st.button("Go →", key=f"go_{page_key}", use_container_width=True):
-            try:
-                st.switch_page(PAGE_PATHS[page_key])
-            except Exception:
-                st.info(f"Update PAGE_PATHS['{page_key}'] in the code to match your actual page filename.")
+              st.switch_page(PAGE_PATHS[page_key])
 
 # ---------------------------------------------------------------------------
 # Featured highlights
