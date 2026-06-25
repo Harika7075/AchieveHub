@@ -273,11 +273,21 @@ else:
 
             st.markdown('</div>', unsafe_allow_html=True)
 
-            # Share — copyable links to this project's image + files
-            share_key = f"show_share_proj_{project['id']}"
-            share_cols_outer = st.columns([3, 1, 1, 1])
-            with share_cols_outer[1]:
+            # Delete / Edit / View / Share — correctly scoped INSIDE the loop for this project
+            action_cols = st.columns([1, 1, 1, 1])
+            with action_cols[0]:
+                if st.button("🔍 View Details", key=f"view_proj_{project['id']}", use_container_width=True):
+                    st.query_params["type"] = "project"
+                    st.query_params["id"] = str(project["id"])
+                    st.switch_page("pages/6_Details.py")
+            with action_cols[1]:
                 share_clicked = st.button("📤 Share", key=f"share_proj_{project['id']}", use_container_width=True)
+            with action_cols[2]:
+                delete_clicked = st.button("🗑 Delete", key=f"delete_proj_{project['id']}", use_container_width=True)
+            with action_cols[3]:
+                edit_toggle = st.button("✏️ Edit", key=f"edit_toggle_proj_{project['id']}", use_container_width=True)
+
+            share_key = f"show_share_proj_{project['id']}"
             if share_clicked:
                 st.session_state[share_key] = not st.session_state.get(share_key, False)
 
@@ -291,13 +301,6 @@ else:
                     st.caption("Copy any link below to share this project elsewhere:")
                     for link in shareable_links:
                         st.code(link, language=None)
-
-            # Delete / Edit — correctly scoped INSIDE the loop for this project
-            action_cols = st.columns([2, 1, 1])
-            with action_cols[1]:
-                delete_clicked = st.button("🗑 Delete", key=f"delete_proj_{project['id']}", use_container_width=True)
-            with action_cols[2]:
-                edit_toggle = st.button("✏️ Edit", key=f"edit_toggle_proj_{project['id']}", use_container_width=True)
 
             if delete_clicked:
                 supabase.table("projects").delete().eq("id", project["id"]).execute()

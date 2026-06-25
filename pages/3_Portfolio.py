@@ -270,15 +270,6 @@ with st.expander("➕ Create your profile", expanded=False):
         submitted = st.form_submit_button("Save profile", use_container_width=True)
 
         if submitted:
-            st.write({
-    "name": name,
-    "about": about,
-    "education": education,
-    "goal": goal,
-    "skills": skills,
-    "github": github,
-    "linkedin": linkedin
-})
             if not name.strip():
                 st.error("Name is required.")
             else:

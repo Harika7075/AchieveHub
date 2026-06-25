@@ -264,7 +264,12 @@ else:
 
             st.markdown('</div>', unsafe_allow_html=True)
 
-            action_cols = st.columns([2, 1, 1, 1])
+            action_cols = st.columns([1, 1, 1, 1])
+            with action_cols[0]:
+                if st.button("🔍 View Details", key=f"view_cert_{cert['id']}", use_container_width=True):
+                    st.query_params["type"] = "certificate"
+                    st.query_params["id"] = str(cert["id"])
+                    st.switch_page("pages/6_Details.py")
             with action_cols[1]:
                 share_clicked = st.button("📤 Share", key=f"share_cert_{cert['id']}", use_container_width=True)
             with action_cols[2]:
