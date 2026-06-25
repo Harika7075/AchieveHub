@@ -15,6 +15,8 @@ supabase = create_client(
 
 os.makedirs("data", exist_ok=True)
 
+PROJECT_FILES_BUCKET = "project_files"
+
 # ---------------------------------------------------------------------------
 # Dark mode
 # ---------------------------------------------------------------------------
@@ -176,6 +178,11 @@ with st.expander("➕ Add Project", expanded=False):
             demo = st.text_input("Demo Link")
             image = st.file_uploader("Project Image", type=["png", "jpg", "jpeg"])
 
+        attachments = st.file_uploader(
+            "Attach files (PDFs, docs, zips, extra images — any number)",
+            accept_multiple_files=True
+        )
+
         submitted = st.form_submit_button("🚀 Save Project", use_container_width=True)
 
         if submitted:
@@ -188,13 +195,26 @@ with st.expander("➕ Add Project", expanded=False):
                     with open(image_path, "wb") as f:
                         f.write(image.getbuffer())
 
+                file_urls = []
+                for file in attachments:
+                    storage_path = f"{name.strip().replace(' ', '_')}_{file.name}"
+                    try:
+                        supabase.storage.from_(PROJECT_FILES_BUCKET).upload(
+                            storage_path, file.getvalue(), {"content-type": file.type or "application/octet-stream"}
+                        )
+                        public_url = supabase.storage.from_(PROJECT_FILES_BUCKET).get_public_url(storage_path)
+                        file_urls.append(public_url)
+                    except Exception as e:
+                        st.warning(f"Couldn't upload {file.name}: {e}")
+
                 supabase.table("projects").insert({
                     "name": name.strip(),
                     "description": description.strip(),
                     "tech": tech.strip(),
                     "github": github.strip(),
                     "demo": demo.strip(),
-                    "image": image_path
+                    "image": image_path,
+                    "files": ",".join(file_urls)
                 }).execute()
 
                 st.success("Project added successfully 🎉")
@@ -243,10 +263,37 @@ else:
                     if project["demo"]:
                         st.link_button("🚀 Demo", project["demo"], use_container_width=True)
 
+                # Attached files (PDFs, docs, zips, etc.)
+                file_urls = [f.strip() for f in (project.get("files") or "").split(",") if f.strip()]
+                if file_urls:
+                    st.markdown("**📎 Attached files**")
+                    for url in file_urls:
+                        fname = url.split("/")[-1]
+                        st.link_button(f"📄 {fname}", url, use_container_width=True)
+
             st.markdown('</div>', unsafe_allow_html=True)
 
+            # Share — copyable links to this project's image + files
+            share_key = f"show_share_proj_{project['id']}"
+            share_cols_outer = st.columns([3, 1, 1, 1])
+            with share_cols_outer[1]:
+                share_clicked = st.button("📤 Share", key=f"share_proj_{project['id']}", use_container_width=True)
+            if share_clicked:
+                st.session_state[share_key] = not st.session_state.get(share_key, False)
+
+            if st.session_state.get(share_key, False):
+                shareable_links = list(file_urls)
+                if project.get("github"):
+                    shareable_links.insert(0, project["github"])
+                if not shareable_links:
+                    st.caption("No shareable links yet — add a GitHub link or attach a file first.")
+                else:
+                    st.caption("Copy any link below to share this project elsewhere:")
+                    for link in shareable_links:
+                        st.code(link, language=None)
+
             # Delete / Edit — correctly scoped INSIDE the loop for this project
-            action_cols = st.columns([3, 1, 1])
+            action_cols = st.columns([2, 1, 1])
             with action_cols[1]:
                 delete_clicked = st.button("🗑 Delete", key=f"delete_proj_{project['id']}", use_container_width=True)
             with action_cols[2]:

@@ -327,17 +327,16 @@ st.markdown('<div class="section-label">⚡ Quick Actions</div>', unsafe_allow_h
 
 # NOTE: update these page paths to match your actual filenames under pages/
 PAGE_PATHS = {
-    "portfolio": "3_Portfolio",
-    "projects": "2_projects",
-    "certificates": "1_certificates",
-    "achievements": "4_Achievements",
-    "resume": "5_Resume_Generator",
+    "profile": "pages/3_Portfolio.py",
+    "projects": "pages/2_projects.py",
+    "certificates": "pages/1_certificates.py",
+    "achievements": "pages/4_Achievements.py",
+    "resume": "pages/5_Resume_Generator.py",
 }
-
 
 action_cols = st.columns(4)
 actions = [
-    ("👤", "Edit Portfolio", "Update your bio & skills", "portfolio"),
+    ("👤", "Edit Profile", "Update your bio & skills", "profile"),
     ("💻", "Add Project", "Showcase your latest build", "projects"),
     ("📜", "Add Certificate", "Log a new credential", "certificates"),
     ("📄", "Build Resume", "Generate a PDF in seconds", "resume"),
@@ -353,7 +352,10 @@ for col, (icon, title, sub, page_key) in zip(action_cols, actions):
         </div>
         """, unsafe_allow_html=True)
         if st.button("Go →", key=f"go_{page_key}", use_container_width=True):
-             st.switch_page(PAGE_PATHS[page_key])
+            try:
+                st.switch_page(PAGE_PATHS[page_key])
+            except Exception:
+                st.info(f"Update PAGE_PATHS['{page_key}'] in the code to match your actual page filename.")
 
 # ---------------------------------------------------------------------------
 # Featured highlights

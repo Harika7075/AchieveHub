@@ -16,6 +16,8 @@ supabase = create_client(
 
 os.makedirs("data", exist_ok=True)
 
+CERT_FILES_BUCKET = "certificate_files"
+
 CATEGORY_COLORS = {
     "AI": "#6E5BA8",
     "Machine Learning": "#2A8C82",
@@ -174,6 +176,11 @@ with st.expander("➕ Add Certificate", expanded=False):
             link = st.text_input("Credential Link")
             image = st.file_uploader("Certificate Image", type=["png", "jpg", "jpeg"])
 
+        attachments = st.file_uploader(
+            "Attach files (e.g. certificate PDF + transcript — any number)",
+            accept_multiple_files=True
+        )
+
         submitted = st.form_submit_button("Save Certificate", use_container_width=True)
 
         if submitted:
@@ -186,13 +193,26 @@ with st.expander("➕ Add Certificate", expanded=False):
                     with open(image_path, "wb") as f:
                         f.write(image.getbuffer())
 
+                file_urls = []
+                for file in attachments:
+                    storage_path = f"{name.strip().replace(' ', '_')}_{file.name}"
+                    try:
+                        supabase.storage.from_(CERT_FILES_BUCKET).upload(
+                            storage_path, file.getvalue(), {"content-type": file.type or "application/octet-stream"}
+                        )
+                        public_url = supabase.storage.from_(CERT_FILES_BUCKET).get_public_url(storage_path)
+                        file_urls.append(public_url)
+                    except Exception as e:
+                        st.warning(f"Couldn't upload {file.name}: {e}")
+
                 supabase.table("certificates").insert({
                     "name": name.strip(),
                     "organization": organization.strip(),
                     "date": str(cert_date),
                     "category": category,
                     "link": link.strip(),
-                    "image": image_path
+                    "image": image_path,
+                    "files": ",".join(file_urls)
                 }).execute()
 
                 st.success("Certificate added 🎉")
@@ -235,13 +255,37 @@ else:
                 if cert["link"]:
                     st.link_button("🔗 View Credential", cert["link"])
 
+                file_urls = [f.strip() for f in (cert.get("files") or "").split(",") if f.strip()]
+                if file_urls:
+                    st.markdown("**📎 Attached files**")
+                    for url in file_urls:
+                        fname = url.split("/")[-1]
+                        st.link_button(f"📄 {fname}", url, use_container_width=True)
+
             st.markdown('</div>', unsafe_allow_html=True)
 
-            action_cols = st.columns([3, 1, 1])
+            action_cols = st.columns([2, 1, 1, 1])
             with action_cols[1]:
-                delete_clicked = st.button("🗑 Delete", key=f"delete_cert_{cert['id']}", use_container_width=True)
+                share_clicked = st.button("📤 Share", key=f"share_cert_{cert['id']}", use_container_width=True)
             with action_cols[2]:
+                delete_clicked = st.button("🗑 Delete", key=f"delete_cert_{cert['id']}", use_container_width=True)
+            with action_cols[3]:
                 edit_open = st.button("✏️ Edit", key=f"edit_toggle_{cert['id']}", use_container_width=True)
+
+            share_key = f"show_share_cert_{cert['id']}"
+            if share_clicked:
+                st.session_state[share_key] = not st.session_state.get(share_key, False)
+
+            if st.session_state.get(share_key, False):
+                shareable_links = list(file_urls)
+                if cert.get("link"):
+                    shareable_links.insert(0, cert["link"])
+                if not shareable_links:
+                    st.caption("No shareable links yet — add a credential link or attach a file first.")
+                else:
+                    st.caption("Copy any link below to share this certificate elsewhere:")
+                    for link_item in shareable_links:
+                        st.code(link_item, language=None)
 
             if delete_clicked:
                 supabase.table("certificates").delete().eq("id", cert["id"]).execute()
