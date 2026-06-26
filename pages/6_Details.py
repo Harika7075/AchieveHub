@@ -1,4 +1,3 @@
-
 import streamlit as st
 from supabase import create_client
 import requests
@@ -107,8 +106,8 @@ def download_file_bytes(url: str):
     return None
 
 
-item_type = st.query_params.get("type")
-item_id = st.query_params.get("id")
+item_type = st.session_state.get("details_type") or st.query_params.get("type")
+item_id = st.session_state.get("details_id") or st.query_params.get("id")
 
 TYPE_CONFIG = {
     "project": {"table": "projects", "icon": "💻", "title_field": "name"},

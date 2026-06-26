@@ -277,6 +277,8 @@ else:
             action_cols = st.columns([1, 1, 1, 1])
             with action_cols[0]:
                 if st.button("🔍 View Details", key=f"view_proj_{project['id']}", use_container_width=True):
+                    st.session_state["details_type"] = "project"
+                    st.session_state["details_id"] = str(project["id"])
                     st.query_params["type"] = "project"
                     st.query_params["id"] = str(project["id"])
                     st.switch_page("pages/6_Details.py")

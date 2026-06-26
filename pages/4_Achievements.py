@@ -250,6 +250,8 @@ else:
             action_cols = st.columns([1, 1, 1])
             with action_cols[0]:
                 if st.button("🔍 View Details", key=f"view_ach_{ach['id']}", use_container_width=True):
+                    st.session_state["details_type"] = "achievement"
+                    st.session_state["details_id"] = str(ach["id"])
                     st.query_params["type"] = "achievement"
                     st.query_params["id"] = str(ach["id"])
                     st.switch_page("pages/6_Details.py")
