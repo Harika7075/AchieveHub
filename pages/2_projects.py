@@ -16,6 +16,18 @@ supabase = create_client(
 os.makedirs("data", exist_ok=True)
 
 PROJECT_FILES_BUCKET = "project_files"
+PROJECT_IMAGES_BUCKET = "project_images"
+
+
+def upload_image_to_storage(file, bucket: str) -> str:
+    try:
+        supabase.storage.from_(bucket).upload(
+            file.name, file.getvalue(), {"content-type": file.type or "image/jpeg"}
+        )
+        return supabase.storage.from_(bucket).get_public_url(file.name)
+    except Exception as e:
+        st.warning(f"Couldn't upload {file.name}: {e}")
+        return ""
 
 # ---------------------------------------------------------------------------
 # Dark mode
@@ -189,11 +201,9 @@ with st.expander("➕ Add Project", expanded=False):
             if not name.strip():
                 st.error("Project name is required.")
             else:
-                image_path = ""
+                image_url = ""
                 if image:
-                    image_path = "data/" + image.name
-                    with open(image_path, "wb") as f:
-                        f.write(image.getbuffer())
+                    image_url = upload_image_to_storage(image, PROJECT_IMAGES_BUCKET)
 
                 file_urls = []
                 for file in attachments:
@@ -213,7 +223,7 @@ with st.expander("➕ Add Project", expanded=False):
                     "tech": tech.strip(),
                     "github": github.strip(),
                     "demo": demo.strip(),
-                    "image": image_path,
+                    "image": image_url,
                     "files": ",".join(file_urls)
                 }).execute()
 
@@ -237,7 +247,7 @@ else:
             col1, col2 = st.columns([1, 2])
 
             with col1:
-                if project["image"] and os.path.exists(project["image"]):
+                if project.get("image"):
                     st.image(project["image"], use_container_width=True)
                 else:
                     st.markdown('<div class="no-image-box">No image</div>', unsafe_allow_html=True)
@@ -306,8 +316,6 @@ else:
 
             if delete_clicked:
                 supabase.table("projects").delete().eq("id", project["id"]).execute()
-                if project["image"] and os.path.exists(project["image"]):
-                    os.remove(project["image"])
                 st.success("Project deleted")
                 st.rerun()
 

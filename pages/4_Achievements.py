@@ -16,6 +16,19 @@ supabase = create_client(
 
 os.makedirs("data", exist_ok=True)
 
+ACHIEVEMENT_IMAGES_BUCKET = "achievement_images"
+
+
+def upload_image_to_storage(file, bucket: str) -> str:
+    try:
+        supabase.storage.from_(bucket).upload(
+            file.name, file.getvalue(), {"content-type": file.type or "image/jpeg"}
+        )
+        return supabase.storage.from_(bucket).get_public_url(file.name)
+    except Exception as e:
+        st.warning(f"Couldn't upload {file.name}: {e}")
+        return ""
+
 CATEGORY_COLORS = {
     "Award": "#C77F1C",
     "Competition": "#D8654F",
@@ -182,11 +195,9 @@ with st.expander("➕ Add Achievement", expanded=False):
             if not title.strip():
                 st.error("Achievement title is required.")
             else:
-                image_path = ""
+                image_url = ""
                 if image:
-                    image_path = "data/" + image.name
-                    with open(image_path, "wb") as f:
-                        f.write(image.getbuffer())
+                    image_url = upload_image_to_storage(image, ACHIEVEMENT_IMAGES_BUCKET)
 
                 supabase.table("achievements").insert({
                     "title": title.strip(),
@@ -195,7 +206,7 @@ with st.expander("➕ Add Achievement", expanded=False):
                     "category": category,
                     "link": link.strip(),
                     "description": description.strip(),
-                    "image": image_path
+                    "image": image_url
                 }).execute()
 
                 st.success("Achievement added 🎉")
@@ -220,7 +231,7 @@ else:
             col1, col2 = st.columns([1, 2])
 
             with col1:
-                if ach.get("image") and os.path.exists(ach["image"]):
+                if ach.get("image"):
                     st.image(ach["image"], use_container_width=True)
                 else:
                     st.markdown('<div class="no-image-box">No image</div>', unsafe_allow_html=True)
@@ -262,8 +273,6 @@ else:
 
             if delete_clicked:
                 supabase.table("achievements").delete().eq("id", ach["id"]).execute()
-                if ach.get("image") and os.path.exists(ach["image"]):
-                    os.remove(ach["image"])
                 st.success("Achievement deleted")
                 st.rerun()
 

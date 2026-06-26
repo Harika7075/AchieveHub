@@ -18,6 +18,21 @@ supabase = create_client(
 
 os.makedirs("data", exist_ok=True)
 
+PROFILE_IMAGES_BUCKET = "profile_images"
+
+
+def upload_image_to_storage(file, bucket: str, prefix: str = "") -> str:
+    """Upload an image to Supabase Storage and return its public URL. Returns '' on failure."""
+    storage_path = f"{prefix}{file.name}"
+    try:
+        supabase.storage.from_(bucket).upload(
+            storage_path, file.getvalue(), {"content-type": file.type or "image/jpeg"}
+        )
+        return supabase.storage.from_(bucket).get_public_url(storage_path)
+    except Exception as e:
+        st.warning(f"Couldn't upload {file.name}: {e}")
+        return ""
+
 # Available accent colors students can choose from
 COLOR_PALETTE = {
     "Navy":   "#1B2A4A",
@@ -273,17 +288,13 @@ with st.expander("➕ Create your profile", expanded=False):
             if not name.strip():
                 st.error("Name is required.")
             else:
-                image_path = ""
+                image_url = ""
                 if image:
-                    image_path = "data/" + image.name
-                    with open(image_path, "wb") as f:
-                        f.write(image.getbuffer())
+                    image_url = upload_image_to_storage(image, PROFILE_IMAGES_BUCKET, prefix="avatar_")
 
-                cover_path = ""
+                cover_url = ""
                 if cover:
-                    cover_path = "data/cover_" + cover.name
-                    with open(cover_path, "wb") as f:
-                        f.write(cover.getbuffer())
+                    cover_url = upload_image_to_storage(cover, PROFILE_IMAGES_BUCKET, prefix="cover_")
 
                 supabase.table("profiles").insert({
                     "name": name.strip(),
@@ -293,8 +304,8 @@ with st.expander("➕ Create your profile", expanded=False):
                     "skills": skills.strip(),
                     "github": github.strip(),
                     "linkedin": linkedin.strip(),
-                    "image": image_path,
-                    "cover_image": cover_path,
+                    "image": image_url,
+                    "cover_image": cover_url,
                     "accent_color": COLOR_PALETTE[color_name],
                 }).execute()
 
@@ -317,15 +328,15 @@ if not profiles.data:
 else:
     for profile in profiles.data:
         accent = profile.get("accent_color") or "#1B2A4A"
-        cover_path = profile.get("cover_image")
+        cover_url = profile.get("cover_image")
 
         with st.container():
             st.markdown('<div class="profile-card">', unsafe_allow_html=True)
 
             # Cover banner — image if present, else solid accent color
-            if cover_path and os.path.exists(cover_path):
+            if cover_url:
                 st.markdown(
-                    f'<div class="cover-banner" style="background-image:url(\'{cover_path}\');"></div>',
+                    f'<div class="cover-banner" style="background-image:url(\'{cover_url}\');"></div>',
                     unsafe_allow_html=True
                 )
             else:
@@ -339,7 +350,7 @@ else:
             col1, col2 = st.columns([1, 3])
 
             with col1:
-                if profile["image"] and os.path.exists(profile["image"]):
+                if profile.get("image"):
                     st.markdown('<div class="avatar-wrap">', unsafe_allow_html=True)
                     st.image(profile["image"], width=110)
                     st.markdown('</div>', unsafe_allow_html=True)
@@ -392,9 +403,5 @@ else:
             with del_col:
                 if st.button("🗑 Delete", key=f"delete_{profile['id']}", use_container_width=True):
                     supabase.table("profiles").delete().eq("id", profile["id"]).execute()
-                    if profile["image"] and os.path.exists(profile["image"]):
-                        os.remove(profile["image"])
-                    if cover_path and os.path.exists(cover_path):
-                        os.remove(cover_path)
                     st.success("Profile deleted")
                     st.rerun()

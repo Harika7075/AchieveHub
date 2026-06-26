@@ -149,9 +149,7 @@ else:
         st.markdown('<div class="detail-card">', unsafe_allow_html=True)
 
         if item.get("image"):
-            # Local path won't exist on a fresh server — show only if it's a URL
-            if str(item["image"]).startswith("http"):
-                st.image(item["image"], width=300)
+            st.image(item["image"], width=300)
 
         for field in ["description", "about", "organization", "education", "goal",
                       "skills", "tech", "category", "date"]:
