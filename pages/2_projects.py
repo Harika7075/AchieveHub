@@ -247,10 +247,21 @@ else:
             col1, col2 = st.columns([1, 2])
 
             with col1:
-                if project.get("image"):
-                    st.image(project["image"], use_container_width=True)
+                image_url = project.get("image")
+
+                if image_url and isinstance(image_url, str) and image_url.startswith("http"):
+                    try:
+                        st.image(image_url, use_container_width=True)
+                    except Exception:
+                        st.markdown(
+                            '<div class="no-image-box">No image</div>',
+                            unsafe_allow_html=True
+                        )
                 else:
-                    st.markdown('<div class="no-image-box">No image</div>', unsafe_allow_html=True)
+                    st.markdown(
+                        '<div class="no-image-box">No image</div>',
+                        unsafe_allow_html=True
+                    )
 
             with col2:
                 st.markdown(f'<div class="project-title">🌱 {project["name"]}</div>', unsafe_allow_html=True)
