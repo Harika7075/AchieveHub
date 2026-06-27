@@ -1,3 +1,6 @@
 streamlit
-pandas
 supabase
+pandas
+reportlab
+Pillow
+python-dotenv
