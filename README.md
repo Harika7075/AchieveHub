@@ -12,8 +12,7 @@ A personal achievement vault for students — track your portfolio, projects, ce
 
 ## 🎥 Demo
 
-🎬 **Watch the demo:** [Click to play video](https://github.com/Harika7075/AchieveHub/raw/main/Untitled%20design%20(1).mp4)
-
+![AchieveHub Demo](demo.gif)
 ---
 
 ## ✨ Features
