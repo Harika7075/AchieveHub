@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="banner.svg" alt="AchieveHub banner" width="100%">
+  <img src="banner/banner.svg" alt="AchieveHub banner" width="100%">
 </p>
 
 # 🏆 AchieveHub
@@ -12,13 +12,7 @@ A personal achievement vault for students — track your portfolio, projects, ce
 
 ## 🎥 Demo
 
-<!-- Video 1 (small, ~13MB) — embedded directly by dragging it into this file on GitHub's editor.
-     Replace this line with the auto-generated link GitHub gives you after dragging it in: -->
-🎬 **Quick demo:** [Watch video 1](#) <!-- paste GitHub's auto-generated asset link here -->
-
-<!-- Video 2 (larger, ~29MB) — uploaded via GitHub Releases since it's over the 25MB drag-and-drop limit.
-     Replace this line with your Release asset link: -->
-🎬 **Full walkthrough:** [Watch video 2](https://github.com/Harika7075/AchieveHub/releases/download/v1.0-demo/Untitled.design.2.mp4)
+🎬 **Watch the demo:** [Click to play video](https://github.com/Harika7075/AchieveHub/raw/main/Untitled%20design%20(1).mp4)
 
 ---
 
@@ -121,3 +115,4 @@ achievehub/
 ## 🙋‍♀️ Author
 
 Built by [Harika](https://github.com/Harika7075) — a student project to learn full-stack app development with Streamlit and Supabase.
+    
