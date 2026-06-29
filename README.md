@@ -14,6 +14,26 @@ A personal achievement vault for students — track your portfolio, projects, ce
 
 ![AchieveHub Demo](demo.gif)
 ---
+---
+
+# 🎥 Project  Full Demo
+
+### 🚀 See AchieveHub in Action!
+
+Explore the complete AchieveHub application, including the dashboard, portfolio, certificates, projects, achievements, and AI Resume Generator.
+
+<p align="center">
+
+[![Watch Full Demo](https://img.shields.io/badge/▶️%20WATCH%20FULL%20DEMO-Click%20Here-0EA5E9?style=for-the-badge\&logo=github\&logoColor=white)](https://github.com/Harika7075/AchieveHub/releases/download/v1.0-demo/Untitled.design.2.mp4)
+
+</p>
+
+<p align="center">
+⭐ Click the button above to watch the complete project walkthrough.
+</p>
+
+---
+
 
 ## ✨ Features
 
