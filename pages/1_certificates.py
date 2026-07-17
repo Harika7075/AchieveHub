@@ -14,6 +14,15 @@ supabase = create_client(
     st.secrets["SUPABASE_KEY"]
 )
 
+# ---------------------------------------------------------------------------
+# Auth gate — must be logged in to view this page
+# ---------------------------------------------------------------------------
+if "user" not in st.session_state or st.session_state.user is None:
+    st.warning("Please log in from the Home page first.")
+    st.stop()
+
+current_user_id = st.session_state.user.id
+
 os.makedirs("data", exist_ok=True)
 
 CERT_FILES_BUCKET = "certificate_files"
@@ -217,6 +226,7 @@ with st.expander("➕ Add Certificate", expanded=False):
                         st.warning(f"Couldn't upload {file.name}: {e}")
 
                 supabase.table("certificates").insert({
+                    "user_id": current_user_id,
                     "name": name.strip(),
                     "organization": organization.strip(),
                     "date": str(cert_date),
@@ -230,7 +240,7 @@ with st.expander("➕ Add Certificate", expanded=False):
                 st.rerun()
 
 # ---------------------------------------------------------------------------
-# Display certificates
+# Display certificates — public directory, everyone can browse everyone's
 # ---------------------------------------------------------------------------
 st.markdown('<div class="section-label">🏆 My Certificates</div>', unsafe_allow_html=True)
 
@@ -241,6 +251,7 @@ if not certificates.data:
 else:
     for cert in certificates.data:
         badge_color = CATEGORY_COLORS.get(cert["category"], "#1B2A4A")
+        is_owner = cert.get("user_id") == current_user_id
 
         with st.container():
             st.markdown('<div class="cert-card">', unsafe_allow_html=True)
@@ -275,7 +286,12 @@ else:
 
             st.markdown('</div>', unsafe_allow_html=True)
 
-            action_cols = st.columns([1, 1, 1, 1])
+            # Everyone can View Details and Share. Only the owner can Edit/Delete.
+            if is_owner:
+                action_cols = st.columns([1, 1, 1, 1])
+            else:
+                action_cols = st.columns([1, 1])
+
             with action_cols[0]:
                 if st.button("🔍 View Details", key=f"view_cert_{cert['id']}", use_container_width=True):
                     st.session_state["details_type"] = "certificate"
@@ -285,10 +301,14 @@ else:
                     st.switch_page("pages/6_Details.py")
             with action_cols[1]:
                 share_clicked = st.button("📤 Share", key=f"share_cert_{cert['id']}", use_container_width=True)
-            with action_cols[2]:
-                delete_clicked = st.button("🗑 Delete", key=f"delete_cert_{cert['id']}", use_container_width=True)
-            with action_cols[3]:
-                edit_open = st.button("✏️ Edit", key=f"edit_toggle_{cert['id']}", use_container_width=True)
+
+            delete_clicked = False
+            edit_open = False
+            if is_owner:
+                with action_cols[2]:
+                    delete_clicked = st.button("🗑 Delete", key=f"delete_cert_{cert['id']}", use_container_width=True)
+                with action_cols[3]:
+                    edit_open = st.button("✏️ Edit", key=f"edit_toggle_{cert['id']}", use_container_width=True)
 
             share_key = f"show_share_cert_{cert['id']}"
             if share_clicked:
@@ -314,7 +334,7 @@ else:
             if edit_open:
                 st.session_state[edit_key] = not st.session_state.get(edit_key, False)
 
-            if st.session_state.get(edit_key, False):
+            if is_owner and st.session_state.get(edit_key, False):
                 with st.form(f"edit_form_{cert['id']}"):
                     new_name = st.text_input("Certificate Name", cert["name"])
                     new_org = st.text_input("Organization", cert["organization"])
