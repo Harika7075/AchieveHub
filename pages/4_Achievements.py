@@ -14,6 +14,15 @@ supabase = create_client(
     st.secrets["SUPABASE_KEY"]
 )
 
+# ---------------------------------------------------------------------------
+# Auth gate — must be logged in to view this page
+# ---------------------------------------------------------------------------
+if "user" not in st.session_state or st.session_state.user is None:
+    st.warning("Please log in from the Home page first.")
+    st.stop()
+
+current_user_id = st.session_state.user.id
+
 os.makedirs("data", exist_ok=True)
 
 ACHIEVEMENT_IMAGES_BUCKET = "achievement_images"
@@ -200,6 +209,7 @@ with st.expander("➕ Add Achievement", expanded=False):
                     image_url = upload_image_to_storage(image, ACHIEVEMENT_IMAGES_BUCKET)
 
                 supabase.table("achievements").insert({
+                    "user_id": current_user_id,
                     "title": title.strip(),
                     "organization": organization.strip(),
                     "date": str(ach_date),
@@ -213,7 +223,7 @@ with st.expander("➕ Add Achievement", expanded=False):
                 st.rerun()
 
 # ---------------------------------------------------------------------------
-# Display achievements
+# Display achievements — public directory, everyone can browse everyone's
 # ---------------------------------------------------------------------------
 st.markdown('<div class="section-label">🏅 My Achievements</div>', unsafe_allow_html=True)
 
@@ -224,6 +234,7 @@ if not achievements.data:
 else:
     for ach in achievements.data:
         badge_color = CATEGORY_COLORS.get(ach.get("category"), "#1B2A4A")
+        is_owner = ach.get("user_id") == current_user_id
 
         with st.container():
             st.markdown('<div class="ach-card">', unsafe_allow_html=True)
@@ -258,7 +269,12 @@ else:
 
             st.markdown('</div>', unsafe_allow_html=True)
 
-            action_cols = st.columns([1, 1, 1])
+            # Everyone can View Details. Only the owner can Edit/Delete.
+            if is_owner:
+                action_cols = st.columns([1, 1, 1])
+            else:
+                action_cols = st.columns([1])
+
             with action_cols[0]:
                 if st.button("🔍 View Details", key=f"view_ach_{ach['id']}", use_container_width=True):
                     st.session_state["details_type"] = "achievement"
@@ -266,10 +282,14 @@ else:
                     st.query_params["type"] = "achievement"
                     st.query_params["id"] = str(ach["id"])
                     st.switch_page("pages/6_Details.py")
-            with action_cols[1]:
-                delete_clicked = st.button("🗑 Delete", key=f"delete_ach_{ach['id']}", use_container_width=True)
-            with action_cols[2]:
-                edit_open = st.button("✏️ Edit", key=f"edit_toggle_ach_{ach['id']}", use_container_width=True)
+
+            delete_clicked = False
+            edit_open = False
+            if is_owner:
+                with action_cols[1]:
+                    delete_clicked = st.button("🗑 Delete", key=f"delete_ach_{ach['id']}", use_container_width=True)
+                with action_cols[2]:
+                    edit_open = st.button("✏️ Edit", key=f"edit_toggle_ach_{ach['id']}", use_container_width=True)
 
             if delete_clicked:
                 supabase.table("achievements").delete().eq("id", ach["id"]).execute()
@@ -280,7 +300,7 @@ else:
             if edit_open:
                 st.session_state[edit_key] = not st.session_state.get(edit_key, False)
 
-            if st.session_state.get(edit_key, False):
+            if is_owner and st.session_state.get(edit_key, False):
                 with st.form(f"edit_ach_form_{ach['id']}"):
                     new_title = st.text_input("Achievement Title", ach["title"])
                     new_org = st.text_input("Organization / Event", ach.get("organization") or "")
