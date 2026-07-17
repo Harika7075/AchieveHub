@@ -1,0 +1,51 @@
+<svg viewBox="0 0 1200 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5F259F"/>
+      <stop offset="100%" stop-color="#3D1766"/>
+    </linearGradient>
+    <linearGradient id="accentLine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF7A00"/>
+      <stop offset="100%" stop-color="#FFB36B"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="300" fill="url(#bg)"/>
+
+  <!-- decorative circles -->
+  <circle cx="1080" cy="40" r="140" fill="rgba(255,255,255,0.06)"/>
+  <circle cx="1150" cy="220" r="90" fill="rgba(255,255,255,0.05)"/>
+  <circle cx="60" cy="260" r="70" fill="rgba(255,255,255,0.05)"/>
+
+  <!-- trophy icon -->
+  <g transform="translate(80,95)">
+    <rect x="30" y="60" width="60" height="14" rx="4" fill="#FFB36B"/>
+    <rect x="45" y="74" width="30" height="18" fill="#FFB36B"/>
+    <path d="M40 0 H80 V40 C80 58 66 70 60 70 C54 70 40 58 40 40 Z" fill="#FFFFFF"/>
+    <path d="M40 8 C25 8 15 18 15 30 C15 42 25 50 38 50" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+    <path d="M80 8 C95 8 105 18 105 30 C105 42 95 50 82 50" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="60" cy="32" r="5" fill="#5F259F"/>
+  </g>
+
+  <!-- title -->
+  <text x="220" y="135" font-family="Verdana, Geneva, sans-serif" font-size="56" font-weight="700" fill="#FFFFFF">AchieveHub</text>
+  <text x="222" y="170" font-family="Verdana, Geneva, sans-serif" font-size="20" fill="#D9C7F0">Your personal achievement vault</text>
+
+  <!-- accent underline -->
+  <rect x="222" y="185" width="220" height="5" rx="2.5" fill="url(#accentLine)"/>
+
+  <!-- feature pills -->
+  <g font-family="Verdana, Geneva, sans-serif" font-size="14" fill="#FFFFFF">
+    <rect x="222" y="220" width="120" height="34" rx="17" fill="rgba(255,255,255,0.12)"/>
+    <text x="245" y="242">💻 Projects</text>
+
+    <rect x="352" y="220" width="130" height="34" rx="17" fill="rgba(255,255,255,0.12)"/>
+    <text x="375" y="242">📜 Certificates</text>
+
+    <rect x="492" y="220" width="120" height="34" rx="17" fill="rgba(255,255,255,0.12)"/>
+    <text x="515" y="242">🏆 Goals</text>
+
+    <rect x="622" y="220" width="120" height="34" rx="17" fill="rgba(255,255,255,0.12)"/>
+    <text x="645" y="242">📄 Resume</text>
+  </g>
+</svg>
