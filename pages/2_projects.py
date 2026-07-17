@@ -13,6 +13,15 @@ supabase = create_client(
     st.secrets["SUPABASE_KEY"]
 )
 
+# ---------------------------------------------------------------------------
+# Auth gate — must be logged in to view this page
+# ---------------------------------------------------------------------------
+if "user" not in st.session_state or st.session_state.user is None:
+    st.warning("Please log in from the Home page first.")
+    st.stop()
+
+current_user_id = st.session_state.user.id
+
 os.makedirs("data", exist_ok=True)
 
 PROJECT_FILES_BUCKET = "project_files"
@@ -218,6 +227,7 @@ with st.expander("➕ Add Project", expanded=False):
                         st.warning(f"Couldn't upload {file.name}: {e}")
 
                 supabase.table("projects").insert({
+                    "user_id": current_user_id,
                     "name": name.strip(),
                     "description": description.strip(),
                     "tech": tech.strip(),
@@ -231,7 +241,7 @@ with st.expander("➕ Add Project", expanded=False):
                 st.rerun()
 
 # ---------------------------------------------------------------------------
-# Display projects
+# Display projects — public directory, everyone can browse everyone's
 # ---------------------------------------------------------------------------
 st.markdown('<div class="section-label">🌟 My Projects</div>', unsafe_allow_html=True)
 
@@ -241,6 +251,8 @@ if not projects.data:
     st.markdown('<div class="empty-state">No projects yet — add your first one above.</div>', unsafe_allow_html=True)
 else:
     for project in projects.data:
+        is_owner = project.get("user_id") == current_user_id
+
         with st.container():
             st.markdown('<div class="project-card">', unsafe_allow_html=True)
 
@@ -294,8 +306,12 @@ else:
 
             st.markdown('</div>', unsafe_allow_html=True)
 
-            # Delete / Edit / View / Share — correctly scoped INSIDE the loop for this project
-            action_cols = st.columns([1, 1, 1, 1])
+            # Everyone can View Details and Share. Only the owner can Edit/Delete.
+            if is_owner:
+                action_cols = st.columns([1, 1, 1, 1])
+            else:
+                action_cols = st.columns([1, 1])
+
             with action_cols[0]:
                 if st.button("🔍 View Details", key=f"view_proj_{project['id']}", use_container_width=True):
                     st.session_state["details_type"] = "project"
@@ -305,10 +321,14 @@ else:
                     st.switch_page("pages/6_Details.py")
             with action_cols[1]:
                 share_clicked = st.button("📤 Share", key=f"share_proj_{project['id']}", use_container_width=True)
-            with action_cols[2]:
-                delete_clicked = st.button("🗑 Delete", key=f"delete_proj_{project['id']}", use_container_width=True)
-            with action_cols[3]:
-                edit_toggle = st.button("✏️ Edit", key=f"edit_toggle_proj_{project['id']}", use_container_width=True)
+
+            delete_clicked = False
+            edit_toggle = False
+            if is_owner:
+                with action_cols[2]:
+                    delete_clicked = st.button("🗑 Delete", key=f"delete_proj_{project['id']}", use_container_width=True)
+                with action_cols[3]:
+                    edit_toggle = st.button("✏️ Edit", key=f"edit_toggle_proj_{project['id']}", use_container_width=True)
 
             share_key = f"show_share_proj_{project['id']}"
             if share_clicked:
@@ -334,7 +354,7 @@ else:
             if edit_toggle:
                 st.session_state[edit_key] = not st.session_state.get(edit_key, False)
 
-            if st.session_state.get(edit_key, False):
+            if is_owner and st.session_state.get(edit_key, False):
                 with st.form(f"edit_proj_form_{project['id']}"):
                     new_name = st.text_input("Edit Name", project["name"])
                     new_description = st.text_area("Edit Description", project["description"])
