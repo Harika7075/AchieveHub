@@ -16,6 +16,15 @@ supabase = create_client(
     st.secrets["SUPABASE_KEY"]
 )
 
+# ---------------------------------------------------------------------------
+# Auth gate — must be logged in to view this page
+# ---------------------------------------------------------------------------
+if "user" not in st.session_state or st.session_state.user is None:
+    st.warning("Please log in from the Home page first.")
+    st.stop()
+
+current_user_id = st.session_state.user.id
+
 os.makedirs("data", exist_ok=True)
 
 PROFILE_IMAGES_BUCKET = "profile_images"
@@ -297,6 +306,7 @@ with st.expander("➕ Create your profile", expanded=False):
                     cover_url = upload_image_to_storage(cover, PROFILE_IMAGES_BUCKET, prefix="cover_")
 
                 supabase.table("profiles").insert({
+                    "user_id": current_user_id,
                     "name": name.strip(),
                     "about": about.strip(),
                     "education": education.strip(),
@@ -313,7 +323,7 @@ with st.expander("➕ Create your profile", expanded=False):
                 st.rerun()
 
 # ---------------------------------------------------------------------------
-# Display profiles
+# Display profiles — public directory, everyone can browse everyone's
 # ---------------------------------------------------------------------------
 st.markdown('<div class="section-label">🌟 Student Profiles</div>', unsafe_allow_html=True)
 
@@ -329,6 +339,7 @@ else:
     for profile in profiles.data:
         accent = profile.get("accent_color") or "#1B2A4A"
         cover_url = profile.get("cover_image")
+        is_owner = profile.get("user_id") == current_user_id
 
         with st.container():
             st.markdown('<div class="profile-card">', unsafe_allow_html=True)
@@ -398,10 +409,11 @@ else:
             st.markdown('</div>', unsafe_allow_html=True)  # close card-body
             st.markdown('</div>', unsafe_allow_html=True)  # close profile-card
 
-            # Delete button — INSIDE the loop, scoped to this profile
-            del_col = st.columns([5, 1])[1]
-            with del_col:
-                if st.button("🗑 Delete", key=f"delete_{profile['id']}", use_container_width=True):
-                    supabase.table("profiles").delete().eq("id", profile["id"]).execute()
-                    st.success("Profile deleted")
-                    st.rerun()
+            # Delete button — only visible to the profile's owner
+            if is_owner:
+                del_col = st.columns([5, 1])[1]
+                with del_col:
+                    if st.button("🗑 Delete", key=f"delete_{profile['id']}", use_container_width=True):
+                        supabase.table("profiles").delete().eq("id", profile["id"]).execute()
+                        st.success("Profile deleted")
+                        st.rerun()
