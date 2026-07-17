@@ -14,6 +14,13 @@ supabase = create_client(
 )
 
 # ---------------------------------------------------------------------------
+# Auth gate — must be logged in to view this page
+# ---------------------------------------------------------------------------
+if "user" not in st.session_state or st.session_state.user is None:
+    st.warning("Please log in from the Home page first.")
+    st.stop()
+
+# ---------------------------------------------------------------------------
 # Dark mode (shared with other pages)
 # ---------------------------------------------------------------------------
 if "dark_mode" not in st.session_state:
