@@ -1,3 +1,4 @@
+
 import streamlit as st
 from supabase import create_client
 import random
@@ -12,6 +13,49 @@ supabase = create_client(
     st.secrets["SUPABASE_URL"],
     st.secrets["SUPABASE_KEY"]
 )
+
+# ---------------------------------------------------------------------------
+# Auth gate — students must log in before seeing anything else
+# ---------------------------------------------------------------------------
+if "user" not in st.session_state:
+    st.session_state.user = None
+
+
+def login_signup_screen():
+    st.markdown("## 🏆 Welcome to AchieveHub")
+    st.caption("Log in or create an account to save and manage your own projects, certificates, and achievements.")
+
+    tab_login, tab_signup = st.tabs(["Log In", "Sign Up"])
+
+    with tab_login:
+        email = st.text_input("Email", key="login_email")
+        password = st.text_input("Password", type="password", key="login_pw")
+        if st.button("Log In", key="login_btn"):
+            try:
+                res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+                st.session_state.user = res.user
+                st.rerun()
+            except Exception as e:
+                st.error(f"Login failed: {e}")
+
+    with tab_signup:
+        email_s = st.text_input("Email", key="signup_email")
+        password_s = st.text_input("Password", type="password", key="signup_pw")
+        if st.button("Sign Up", key="signup_btn"):
+            try:
+                supabase.auth.sign_up({"email": email_s, "password": password_s})
+                st.success("Account created! Check your email to confirm, then log in from the Log In tab.")
+            except Exception as e:
+                st.error(f"Sign up failed: {e}")
+
+
+if st.session_state.user is None:
+    login_signup_screen()
+    st.stop()
+
+# Logged in — expose current user id for use in this page and others
+current_user_id = st.session_state.user.id
+current_user_email = st.session_state.user.email
 
 MOTIVATIONAL_QUOTES = [
     "Every certificate is proof you didn't quit.",
@@ -270,6 +314,12 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 with st.sidebar:
+    st.markdown(f"### 👋 {current_user_email}")
+    if st.button("Log out"):
+        supabase.auth.sign_out()
+        st.session_state.user = None
+        st.rerun()
+
     st.markdown("### ⚙️ Display")
     st.session_state.dark_mode = st.toggle("🌙 Dark mode", value=st.session_state.dark_mode)
 
