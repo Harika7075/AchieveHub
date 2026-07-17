@@ -27,6 +27,15 @@ supabase = create_client(
     st.secrets["SUPABASE_KEY"]
 )
 
+# ---------------------------------------------------------------------------
+# Auth gate — must be logged in to view this page
+# ---------------------------------------------------------------------------
+if "user" not in st.session_state or st.session_state.user is None:
+    st.warning("Please log in from the Home page first.")
+    st.stop()
+
+current_user_id = st.session_state.user.id
+
 os.makedirs("data", exist_ok=True)
 
 ACCENT_OPTIONS = {
@@ -144,12 +153,17 @@ st.markdown("""
 
 
 # ---------------------------------------------------------------------------
-# Data fetching
+# Data fetching — always scoped to the logged-in student
 # ---------------------------------------------------------------------------
-def fetch_table(table_name: str):
-    """Fetch a table's rows; returns [] if the table doesn't exist yet."""
+def fetch_own_table(table_name: str):
+    """Fetch only the current student's rows from a table; [] if none or table missing."""
     try:
-        result = supabase.table(table_name).select("*").execute()
+        result = (
+            supabase.table(table_name)
+            .select("*")
+            .eq("user_id", current_user_id)
+            .execute()
+        )
         return result.data
     except Exception:
         return []
@@ -327,15 +341,15 @@ def create_resume_pdf(profile_data, project_data, cert_data, achievement_data, s
 
 
 # ---------------------------------------------------------------------------
-# Resume history (Supabase Storage)
+# Resume history (Supabase Storage) — scoped to the current student
 # ---------------------------------------------------------------------------
 RESUME_BUCKET = "resumes"
 
 
 def save_resume_to_history(pdf_path: str, template: str, accent_hex: str):
-    """Upload the generated PDF to Supabase Storage and log it in resume_history."""
+    """Upload the generated PDF to Supabase Storage and log it in resume_history for this student."""
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    storage_path = f"resume_{timestamp}.pdf"
+    storage_path = f"{current_user_id}_resume_{timestamp}.pdf"
 
     with open(pdf_path, "rb") as f:
         file_bytes = f.read()
@@ -347,6 +361,7 @@ def save_resume_to_history(pdf_path: str, template: str, accent_hex: str):
     public_url = supabase.storage.from_(RESUME_BUCKET).get_public_url(storage_path)
 
     supabase.table("resume_history").insert({
+        "user_id": current_user_id,
         "file_path": storage_path,
         "file_url": public_url,
         "template": template,
@@ -361,6 +376,7 @@ def fetch_resume_history():
         result = (
             supabase.table("resume_history")
             .select("*")
+            .eq("user_id", current_user_id)
             .order("id", desc=True)
             .execute()
         )
@@ -374,16 +390,16 @@ def delete_resume_history_entry(entry_id, file_path):
         supabase.storage.from_(RESUME_BUCKET).remove([file_path])
     except Exception:
         pass
-    supabase.table("resume_history").delete().eq("id", entry_id).execute()
+    supabase.table("resume_history").delete().eq("id", entry_id).eq("user_id", current_user_id).execute()
 
 
 # ---------------------------------------------------------------------------
-# Load data
+# Load data — only the current student's own profile, projects, certs, achievements
 # ---------------------------------------------------------------------------
-profiles = fetch_table("profiles")
-projects = fetch_table("projects")
-certificates = fetch_table("certificates")
-achievements = fetch_table("achievements")
+profiles = fetch_own_table("profiles")
+projects = fetch_own_table("projects")
+certificates = fetch_own_table("certificates")
+achievements = fetch_own_table("achievements")
 
 if not profiles:
     st.markdown(
@@ -506,7 +522,7 @@ else:
                     st.error(f"Couldn't save to history: {e}")
 
     # -----------------------------------------------------------------
-    # Resume history
+    # Resume history — only this student's saved resumes
     # -----------------------------------------------------------------
     st.markdown('<div class="section-label">📚 Resume History</div>', unsafe_allow_html=True)
 
